@@ -27,6 +27,44 @@
 //     |i| i*i
 // }
 
+// 6-87 自定义迭代器适配器
+#[derive(Clone, Debug)]
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+pub struct Step<I>{
+    iter: I,
+    skip: usize,
+}
+
+impl<I> Iterator for Step<I> where I: Iterator{
+    type Item = I::Item;
+
+    fn next(&mut self) -> Option<I::Item> {
+        let elt = self.iter.next();
+        if self.skip > 0{
+            self.iter.nth(self.skip - 1);
+        }
+        elt
+    }
+}
+
+pub fn step<I>(iter: I, step: usize) -> Step<I> where I: Iterator{
+    assert_ne!(step, 0);
+    Step{
+        iter: iter,
+        skip: step - 1,
+    }
+}
+
+pub trait IterExt: Iterator{
+    fn step(self, n: usize) -> Step<Self> where Self: Sized,{
+        step(self, n)
+    }
+}
+
+impl<T: ?Sized> IterExt for T where T: Iterator{
+
+}
+
 
 fn main() {
     // // 6-2 按值传递参数使用mut关键字
@@ -96,4 +134,24 @@ fn main() {
     // assert_eq!(4, square(2));
 
     // let x = Box::new(&2usize);
+
+    // // 6-74 部分迭代器适配器使用示例
+    // let arr1 = [1, 2, 3, 4, 5];
+    // let c1 = arr1.iter().map(|x| 2*x).collect::<Vec<i32>>();
+    // assert_eq!(&c1[..], [2, 4, 6, 8, 10]);
+    //
+    // let arr2 = ["1", "2", "3", "h"];
+    // let c2 = arr2.iter().filter_map(|x| x.parse().ok()).
+    //     collect::<Vec<i32>>();
+    // assert_eq!(&c2[..], [1, 2, 3]);
+    //
+    // let arr3 = ['a', 'b', 'c'];
+    // for (idx, val) in arr3.iter().enumerate(){
+    //     println!("idx: {:?}, val: {:?}", idx, val.to_uppercase());
+    // }
+
+    // 6-87 自定义迭代器适配器
+    let arr = [1, 2, 3, 4, 5, 6];
+    let sum = arr.iter().step(2).fold(0, |acc, x| acc + x);
+    assert_eq!(9, sum);
 }
